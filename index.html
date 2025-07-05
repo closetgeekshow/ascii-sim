@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASCII Strategy Simulation</title>
+    <style>
+        body {
+            background-color: #000;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            margin: 0;
+            padding: 20px;
+            overflow-x: auto;
+        }
+        
+        #gameContainer {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        #mapDisplay {
+            background-color: #001100;
+            border: 2px solid #00ff00;
+            padding: 10px;
+            margin: 10px;
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            grid-template-rows: repeat(10, 1fr);
+            gap: 0;
+            width: 400px;
+            height: 400px;
+        }
+        
+        .map-cell {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #002200;
+            border: 1px solid #004400;
+            font-size: 16px;
+            font-family: 'Courier New', monospace;
+            color: #00ff00;
+        }
+        
+        #controls {
+            margin: 10px;
+        }
+        
+        #gameLog {
+            background-color: #000011;
+            border: 1px solid #0000ff;
+            padding: 10px;
+            margin: 10px;
+            height: 250px;
+            overflow-y: auto;
+            font-size: 10px;
+            width: 80%;
+            line-height: 1.3;
+        }
+        
+        #stats {
+            background-color: #110000;
+            border: 1px solid #ff0000;
+            padding: 10px;
+            margin: 10px;
+            font-size: 10px;
+            width: 80%;
+            line-height: 1.1;
+        }
+        
+        #stats table {
+            width: 100%;
+            border-collapse: collapse;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+        }
+        
+        #stats th, #stats td {
+            border: 1px solid #00ff00;
+            padding: 4px 8px;
+            text-align: center;
+        }
+        
+        #stats th {
+            background-color: #002200;
+            font-weight: bold;
+        }
+        
+        #stats tr:nth-child(even) {
+            background-color: #001100;
+        }
+        
+        #gameLog {
+            background-color: #000011;
+            border: 1px solid #0000ff;
+            padding: 10px;
+            margin: 10px;
+            height: 250px;
+            overflow-y: auto;
+            font-size: 10px;
+            width: 80%;
+            line-height: 1.3;
+        }
+        
+        .log-turn {
+            color: #ffff00;
+            font-weight: bold;
+            border-bottom: 1px solid #ffff00;
+            margin: 5px 0;
+        }
+        
+        .log-entry {
+            margin-left: 10px;
+            color: #00ffff;
+        }
+        
+        button {
+            background-color: #003300;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            padding: 5px 10px;
+            margin: 2px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+        }
+        
+        button:hover {
+            background-color: #004400;
+        }
+        
+        #legend {
+            background-color: #001100;
+            border: 1px solid #00ff00;
+            padding: 10px;
+            margin: 10px;
+            font-size: 10px;
+            width: 400px;
+        }
+        
+        #legend h4 {
+            margin: 0 0 10px 0;
+            color: #00ff00;
+            text-align: center;
+        }
+        
+        .legend-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 5px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 9px;
+        }
+        
+        .legend-symbol {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            text-align: center;
+            line-height: 16px;
+            border: 1px solid #004400;
+            font-size: 12px;
+        }
+        
+        /* CRT effect */
+        .crt-effect {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .crt-effect::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(transparent 50%, rgba(0,255,0,0.1) 50%);
+            background-size: 100% 2px;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer" class="crt-effect">
+        <h1>ASCII Strategy Simulation</h1>
+        <div id="controls">
+            <button onclick="game.nextTurn()">Next Turn</button>
+            <button onclick="game.autoPlay()">Auto Play</button>
+            <button onclick="game.pause()">Pause</button>
+            <button onclick="game.reset()">Reset</button>
+        </div>
+        <div id="mapDisplay"></div>
+        <div id="legend">
+            <h4>Legend</h4>
+            <div class="legend-grid">
+                <div class="legend-item">
+                    <span class="legend-symbol" style="background-color: #440000;">🟥</span>
+                    <span>Red Empire</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-symbol" style="background-color: #000044;">🟦</span>
+                    <span>Blue Kingdom</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-symbol" style="background-color: #004400;">🟩</span>
+                    <span>Green Republic</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-symbol" style="background-color: #444400;">🟨</span>
+                    <span>Yellow Federation</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-symbol" style="background-color: #000044;">~</span>
+                    <span>Ocean</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-symbol" style="background-color: #444400;">^</span>
+                    <span>Mountain</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-symbol" style="background-color: #004444;">≈</span>
+                    <span>River</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-symbol" style="background-color: #002200;">·</span>
+                    <span>Neutral Land</span>
+                </div>
+            </div>
+        </div>
+        <div id="stats"></div>
+        <div id="gameLog"></div>
+    </div>
+    
+    <script src="game.js"></script>
+</body>
+</html>
