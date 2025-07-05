@@ -42,6 +42,27 @@
             font-size: 16px;
             font-family: 'Courier New', monospace;
             color: #00ff00;
+            cursor: pointer;
+        }
+        
+        .map-cell:hover {
+            border: 2px solid #00ff00;
+        }
+        
+        .inner-cell {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #002200;
+            border: 1px solid #004400;
+            font-size: 10px;
+            font-family: 'Courier New', monospace;
+            color: #00ff00;
+            cursor: pointer;
+        }
+        
+        .inner-cell:hover {
+            border: 2px solid #00ff00;
         }
         
         #controls {
@@ -195,6 +216,11 @@
             <button onclick="game.autoPlay()">Auto Play</button>
             <button onclick="game.pause()">Pause</button>
             <button onclick="game.reset()">Reset</button>
+            <button onclick="game.zoomOut()" id="zoomOutBtn" style="display: none;">Zoom Out</button>
+        </div>
+        <div id="zoomInfo" style="display: none;">
+            <h3>Zoomed into Square: <span id="zoomCoords"></span></h3>
+            <p>Click cells to develop land, deploy armies, or build structures</p>
         </div>
         <div id="mapDisplay"></div>
         <div id="legend">

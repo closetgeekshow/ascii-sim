@@ -8,6 +8,7 @@ class Game {
         this.gameLog = [];
         this.isPlaying = false;
         this.autoPlayInterval = null;
+        this.zoomedSquare = null; // {x, y} when zoomed into a square
         
         this.initializeGame();
         this.render();
@@ -46,7 +47,10 @@ class Game {
                     terrain: Math.random() < 0.1 ? 'mountain' : 
                             Math.random() < 0.15 ? 'river' : 
                             Math.random() < 0.05 ? 'ocean' : 'land',
-                    resources: Math.random() < 0.2 ? this.getRandomResource() : null
+                    resources: Math.random() < 0.2 ? this.getRandomResource() : null,
+                    development: 'none', // none, farm, mine, forest, town, city, castle
+                    army: null,
+                    population: 0
                 };
             }
         }
@@ -393,35 +397,193 @@ class Game {
         const mapDisplay = document.getElementById('mapDisplay');
         mapDisplay.innerHTML = '';
         
+        if (this.zoomedSquare) {
+            this.renderInnerGrid();
+        } else {
+            this.renderMainGrid();
+        }
+    }
+    
+    renderMainGrid() {
+        const mapDisplay = document.getElementById('mapDisplay');
+        
         for (let i = 0; i < this.MAP_SIZE; i++) {
             for (let j = 0; j < this.MAP_SIZE; j++) {
                 const cell = this.map[i][j];
                 const cellDiv = document.createElement('div');
                 cellDiv.className = 'map-cell';
+                cellDiv.onclick = () => this.zoomIntoSquare(i, j);
                 
-                let char = '·';
-                let backgroundColor = '#002200';
-                
-                if (cell.owner !== null) {
-                    char = this.nations[cell.owner].symbol;
-                    backgroundColor = this.getNationColor(cell.owner);
-                } else if (cell.terrain === 'ocean') {
-                    char = '~';
-                    backgroundColor = '#000044';
-                } else if (cell.terrain === 'mountain') {
-                    char = '^';
-                    backgroundColor = '#444400';
-                } else if (cell.terrain === 'river') {
-                    char = '≈';
-                    backgroundColor = '#004444';
-                }
+                let char = this.getMainCellDisplay(cell);
+                let backgroundColor = this.getMainCellColor(cell);
                 
                 cellDiv.textContent = char;
                 cellDiv.style.backgroundColor = backgroundColor;
-                cellDiv.title = `(${i},${j}) ${cell.terrain} - Owner: ${cell.owner ? this.nations[cell.owner].name : 'None'}`;
+                cellDiv.title = `(${i},${j}) ${cell.terrain} - Owner: ${cell.owner ? this.nations[cell.owner].name : 'None'} - Click to zoom`;
                 
                 mapDisplay.appendChild(cellDiv);
             }
+        }
+    }
+    
+    renderInnerGrid() {
+        const mapDisplay = document.getElementById('mapDisplay');
+        const mainCell = this.map[this.zoomedSquare.x][this.zoomedSquare.y];
+        
+        for (let i = 0; i < this.INNER_SIZE; i++) {
+            for (let j = 0; j < this.INNER_SIZE; j++) {
+                const innerCell = mainCell.innerGrid[i][j];
+                const cellDiv = document.createElement('div');
+                cellDiv.className = 'inner-cell';
+                cellDiv.onclick = () => this.handleInnerCellClick(i, j);
+                
+                let char = this.getInnerCellDisplay(innerCell);
+                let backgroundColor = this.getInnerCellColor(innerCell, mainCell);
+                
+                cellDiv.textContent = char;
+                cellDiv.style.backgroundColor = backgroundColor;
+                cellDiv.title = `Inner (${i},${j}) ${innerCell.terrain} - ${innerCell.development}`;
+                
+                mapDisplay.appendChild(cellDiv);
+            }
+        }
+    }
+    
+    getMainCellDisplay(cell) {
+        // Show the most significant feature of the cell
+        if (cell.owner !== null) {
+            // Check for major developments in inner grid
+            const majorDevelopment = this.getMajorDevelopment(cell);
+            if (majorDevelopment) {
+                return majorDevelopment;
+            }
+            return this.nations[cell.owner].symbol;
+        } else if (cell.terrain === 'ocean') {
+            return '~';
+        } else if (cell.terrain === 'mountain') {
+            return '^';
+        } else if (cell.terrain === 'river') {
+            return '≈';
+        }
+        return '·';
+    }
+    
+    getMajorDevelopment(cell) {
+        // Check inner grid for major developments
+        let hasCastle = false;
+        let hasCity = false;
+        let townCount = 0;
+        let armyCount = 0;
+        
+        for (let i = 0; i < this.INNER_SIZE; i++) {
+            for (let j = 0; j < this.INNER_SIZE; j++) {
+                const innerCell = cell.innerGrid[i][j];
+                if (innerCell.development === 'castle') hasCastle = true;
+                if (innerCell.development === 'city') hasCity = true;
+                if (innerCell.development === 'town') townCount++;
+                if (innerCell.army) armyCount++;
+            }
+        }
+        
+        if (hasCastle) return '🏰';
+        if (hasCity) return '🏛';
+        if (townCount >= 3) return '🏘'; // Multiple towns
+        if (armyCount >= 2) return '⚔'; // Multiple armies
+        
+        return null;
+    }
+    
+    getMainCellColor(cell) {
+        if (cell.owner !== null) {
+            return this.getNationColor(cell.owner);
+        } else if (cell.terrain === 'ocean') {
+            return '#000044';
+        } else if (cell.terrain === 'mountain') {
+            return '#444400';
+        } else if (cell.terrain === 'river') {
+            return '#004444';
+        }
+        return '#002200';
+    }
+    
+    getInnerCellDisplay(innerCell) {
+        if (innerCell.army) {
+            return '⚔';
+        } else if (innerCell.development === 'city') {
+            return '🏛';
+        } else if (innerCell.development === 'town') {
+            return '🏠';
+        } else if (innerCell.development === 'castle') {
+            return '🏰';
+        } else if (innerCell.development === 'farm') {
+            return '🌾';
+        } else if (innerCell.development === 'mine') {
+            return '⛏';
+        } else if (innerCell.development === 'forest') {
+            return '🌲';
+        } else if (innerCell.terrain === 'ocean') {
+            return '~';
+        } else if (innerCell.terrain === 'mountain') {
+            return '^';
+        } else if (innerCell.terrain === 'river') {
+            return '≈';
+        }
+        return '·';
+    }
+    
+    getInnerCellColor(innerCell, mainCell) {
+        if (innerCell.army) {
+            return '#660000';
+        } else if (innerCell.development !== 'none') {
+            return '#004400';
+        } else if (innerCell.terrain === 'ocean') {
+            return '#000044';
+        } else if (innerCell.terrain === 'mountain') {
+            return '#444400';
+        } else if (innerCell.terrain === 'river') {
+            return '#004444';
+        }
+        
+        // Base color from main cell owner
+        if (mainCell.owner !== null) {
+            return this.getNationColor(mainCell.owner);
+        }
+        return '#002200';
+    }
+    
+    zoomIntoSquare(x, y) {
+        this.zoomedSquare = { x, y };
+        document.getElementById('zoomOutBtn').style.display = 'inline-block';
+        document.getElementById('zoomInfo').style.display = 'block';
+        document.getElementById('zoomCoords').textContent = `(${x}, ${y})`;
+        this.render();
+    }
+    
+    zoomOut() {
+        this.zoomedSquare = null;
+        document.getElementById('zoomOutBtn').style.display = 'none';
+        document.getElementById('zoomInfo').style.display = 'none';
+        this.render();
+    }
+    
+    handleInnerCellClick(x, y) {
+        if (!this.zoomedSquare) return;
+        
+        const mainCell = this.map[this.zoomedSquare.x][this.zoomedSquare.y];
+        const innerCell = mainCell.innerGrid[x][y];
+        
+        // Simple development logic
+        if (innerCell.terrain === 'land' && innerCell.development === 'none') {
+            if (Math.random() < 0.33) {
+                innerCell.development = 'farm';
+            } else if (Math.random() < 0.5) {
+                innerCell.development = 'forest';
+            } else {
+                innerCell.development = 'town';
+                innerCell.population = 100;
+            }
+            this.log(`Developed ${innerCell.development} at inner (${x}, ${y}) in square (${this.zoomedSquare.x}, ${this.zoomedSquare.y})`);
+            this.render();
         }
     }
     
