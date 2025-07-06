@@ -1,18 +1,67 @@
 class Game {
-    constructor() {
+    constructor(seed = null) {
+        // Allowed values as per AGENT.md
+        this.TERRAIN_TYPES = ['land', 'ocean', 'mountain', 'river'];
+        this.DEVELOPMENT_TYPES = ['none', 'farm', 'mine', 'forest', 'town', 'city', 'castle'];
+        this.ORDER_TYPES = ['move', 'attack', 'defend', 'build', null];
+        this.RESOURCE_TYPES = ['gold', 'wood', 'food', 'metal'];
+        
         this.MAP_SIZE = 10;
         this.INNER_SIZE = 10;
         this.turn = 0;
         this.nations = [];
-        this.map = this.initializeMap();
         this.gameLog = [];
         this.isPlaying = false;
         this.autoPlayInterval = null;
         this.zoomedSquare = null; // {x, y} when zoomed into a square
         this.highlightedSquare = null; // {x, y, type: 'main'|'inner'}
         
+        // Random seed control
+        this.seed = seed || Math.floor(Math.random() * 1000000);
+        this.random = this.createSeededRandom(this.seed);
+        this.map = this.initializeMap();
+        
         this.initializeGame();
         this.render();
+    }
+    
+    displaySeed() {
+        const seedElement = document.getElementById('currentSeed');
+        if (seedElement) {
+            seedElement.textContent = this.seed;
+        }
+    }
+    
+    createSeededRandom(seed) {
+        let x = Math.sin(seed) * 10000;
+        return function() {
+            x = Math.sin(x) * 10000;
+            return x - Math.floor(x);
+        };
+    }
+    
+    validateTerrain(terrain) {
+        if (!this.TERRAIN_TYPES.includes(terrain)) {
+            console.error(`Invalid terrain type: ${terrain}. Must be one of: ${this.TERRAIN_TYPES.join(', ')}`);
+            return 'land'; // Default fallback
+        }
+        return terrain;
+    }
+    
+    validateDevelopment(development) {
+        if (!this.DEVELOPMENT_TYPES.includes(development)) {
+            console.error(`Invalid development type: ${development}. Must be one of: ${this.DEVELOPMENT_TYPES.join(', ')}`);
+            return 'none'; // Default fallback
+        }
+        return development;
+    }
+    
+    validateOrder(order) {
+        if (!this.ORDER_TYPES.includes(order)) {
+            console.error(`Invalid order type: ${order}. Must be one of: ${this.ORDER_TYPES.join(', ')}`);
+            return null; // Default fallback
+        }
+        return order;
     }
     
     initializeMap() {
@@ -22,14 +71,14 @@ class Game {
             for (let j = 0; j < this.MAP_SIZE; j++) {
                 map[i][j] = {
                     owner: null,
-                    terrain: 'land',
+                    terrain: this.validateTerrain('land'),
                     resources: {
                         gold: 0,
                         wood: 0,
                         food: 0,
                         metal: 0
                     },
-                    development: 'none', // none, farm, mine, forest, town, city
+                    development: this.validateDevelopment('none'),
                     army: null,
                     population: 0,
                     innerGrid: this.generateInnerGrid()
@@ -44,12 +93,17 @@ class Game {
         for (let i = 0; i < this.INNER_SIZE; i++) {
             inner[i] = [];
             for (let j = 0; j < this.INNER_SIZE; j++) {
+                const terrainRoll = this.random();
+                let terrain;
+                if (terrainRoll < 0.1) terrain = 'mountain';
+                else if (terrainRoll < 0.25) terrain = 'river';
+                else if (terrainRoll < 0.30) terrain = 'ocean';
+                else terrain = 'land';
+                
                 inner[i][j] = {
-                    terrain: Math.random() < 0.1 ? 'mountain' : 
-                            Math.random() < 0.15 ? 'river' : 
-                            Math.random() < 0.05 ? 'ocean' : 'land',
-                    resources: Math.random() < 0.2 ? this.getRandomResource() : null,
-                    development: 'none', // none, farm, mine, forest, town, city, castle
+                    terrain: this.validateTerrain(terrain),
+                    resources: this.random() < 0.2 ? this.getRandomResource() : null,
+                    development: this.validateDevelopment('none'),
                     army: null,
                     population: 0,
                     road: false,
@@ -61,8 +115,7 @@ class Game {
     }
     
     getRandomResource() {
-        const resources = ['gold', 'wood', 'food', 'metal'];
-        return resources[Math.floor(Math.random() * resources.length)];
+        return this.RESOURCE_TYPES[Math.floor(this.random() * this.RESOURCE_TYPES.length)];
     }
     
     initializeGame() {
@@ -85,7 +138,7 @@ class Game {
         // Distribute initial resources
         this.distributeResources();
         
-        this.log(`Game initialized with ${nationCount} nations`);
+        this.log(`Game initialized with ${nationCount} nations (seed: ${this.seed})`);
     }
     
     placeNationsOnMap() {
@@ -97,8 +150,8 @@ class Game {
             let attempts = 0;
             
             while (!placed && attempts < 100) {
-                const x = Math.floor(Math.random() * this.MAP_SIZE);
-                const y = Math.floor(Math.random() * this.MAP_SIZE);
+                const x = Math.floor(this.random() * this.MAP_SIZE);
+                const y = Math.floor(this.random() * this.MAP_SIZE);
                 
                 let validPosition = true;
                 for (let pos of positions) {
@@ -111,13 +164,13 @@ class Game {
                 
                 if (validPosition) {
                     this.map[x][y].owner = nation.id;
-                    this.map[x][y].development = 'city';
+                    this.map[x][y].development = this.validateDevelopment('city');
                     this.map[x][y].population = 1000;
                     
                     // Place a city in the center of the inner grid
                     const centerX = Math.floor(this.INNER_SIZE / 2);
                     const centerY = Math.floor(this.INNER_SIZE / 2);
-                    this.map[x][y].innerGrid[centerX][centerY].development = 'city';
+                    this.map[x][y].innerGrid[centerX][centerY].development = this.validateDevelopment('city');
                     this.map[x][y].innerGrid[centerX][centerY].population = 1000;
                     
                     nation.capital = { x, y };
@@ -134,8 +187,8 @@ class Game {
     generateTerrain() {
         // Generate oceans
         for (let i = 0; i < 3; i++) {
-            const startX = Math.floor(Math.random() * this.MAP_SIZE);
-            const startY = Math.floor(Math.random() * this.MAP_SIZE);
+            const startX = Math.floor(this.random() * this.MAP_SIZE);
+            const startY = Math.floor(this.random() * this.MAP_SIZE);
             this.generateOcean(startX, startY);
         }
         
@@ -146,16 +199,16 @@ class Game {
         
         // Generate mountains
         for (let i = 0; i < 5; i++) {
-            const x = Math.floor(Math.random() * this.MAP_SIZE);
-            const y = Math.floor(Math.random() * this.MAP_SIZE);
+            const x = Math.floor(this.random() * this.MAP_SIZE);
+            const y = Math.floor(this.random() * this.MAP_SIZE);
             if (!this.map[x][y].owner) {
-                this.map[x][y].terrain = 'mountain';
+                this.map[x][y].terrain = this.validateTerrain('mountain');
             }
         }
     }
     
     generateOcean(startX, startY) {
-        const size = Math.floor(Math.random() * 3) + 1;
+        const size = Math.floor(this.random() * 3) + 1;
         for (let i = 0; i < size; i++) {
             for (let j = 0; j < size; j++) {
                 const x = startX + i;
@@ -168,7 +221,7 @@ class Game {
     }
     
     generateRiver() {
-        const startX = Math.floor(Math.random() * this.MAP_SIZE);
+        const startX = Math.floor(this.random() * this.MAP_SIZE);
         const startY = 0;
         let x = startX;
         let y = startY;
@@ -180,8 +233,8 @@ class Game {
             }
             
             y++;
-            if (Math.random() < 0.3) {
-                x += Math.random() < 0.5 ? -1 : 1;
+            if (this.random() < 0.3) {
+                x += this.random() < 0.5 ? -1 : 1;
                 x = Math.max(0, Math.min(this.MAP_SIZE - 1, x));
             }
         }
@@ -194,21 +247,21 @@ class Game {
                 
                 // Base resource generation
                 if (cell.terrain === 'land') {
-                    cell.resources.wood = Math.floor(Math.random() * 5) + 1;
-                    cell.resources.food = Math.floor(Math.random() * 3) + 1;
+                    cell.resources.wood = Math.floor(this.random() * 5) + 1;
+                    cell.resources.food = Math.floor(this.random() * 3) + 1;
                 }
                 
                 if (cell.terrain === 'mountain') {
-                    cell.resources.metal = Math.floor(Math.random() * 8) + 2;
+                    cell.resources.metal = Math.floor(this.random() * 8) + 2;
                 }
                 
                 if (cell.terrain === 'river') {
-                    cell.resources.food = Math.floor(Math.random() * 6) + 3;
+                    cell.resources.food = Math.floor(this.random() * 6) + 3;
                 }
                 
                 // Random gold deposits
-                if (Math.random() < 0.15) {
-                    cell.resources.gold = Math.floor(Math.random() * 3) + 1;
+                if (this.random() < 0.15) {
+                    cell.resources.gold = Math.floor(this.random() * 3) + 1;
                 }
             }
         }
@@ -304,7 +357,7 @@ class Game {
         this.processTradeOffers(nation);
         
         // Make trade offers to other nations
-        if (Math.random() < 0.3) {
+        if (this.random() < 0.3) {
             this.makeTradeOffer(nation);
         }
         
@@ -312,20 +365,20 @@ class Game {
         this.moveArmies(nation);
         
         // Simple AI decisions
-        if (nation.resources.gold > 50 && Math.random() < 0.3) {
+        if (nation.resources.gold > 50 && this.random() < 0.3) {
             this.createArmy(nation);
         }
         
-        if (nation.resources.gold > 30 && Math.random() < 0.2) {
+        if (nation.resources.gold > 30 && this.random() < 0.2) {
             this.developLand(nation);
         }
         
-        if (Math.random() < 0.4) {
+        if (this.random() < 0.4) {
             this.expandTerritory(nation);
         }
         
         // Develop inner grids
-        if (Math.random() < 0.6) {
+        if (this.random() < 0.6) {
             this.developInnerGrid(nation);
         }
     }
@@ -339,10 +392,10 @@ class Game {
             }
             
             // Random chance to change diplomatic relations
-            if (Math.random() < 0.05) {
+            if (this.random() < 0.05) {
                 const currentRelation = nation.diplomacy[otherNation.id];
                 const relations = ['neutral', 'trade', 'war', 'peace'];
-                const newRelation = relations[Math.floor(Math.random() * relations.length)];
+                const newRelation = relations[Math.floor(this.random() * relations.length)];
                 
                 if (currentRelation !== newRelation) {
                     nation.diplomacy[otherNation.id] = newRelation;
@@ -357,15 +410,15 @@ class Game {
         const otherNations = this.nations.filter(n => n.id !== nation.id);
         if (otherNations.length === 0) return;
         
-        const partner = otherNations[Math.floor(Math.random() * otherNations.length)];
+        const partner = otherNations[Math.floor(this.random() * otherNations.length)];
         
         // Don't trade with enemies
         if (nation.diplomacy[partner.id] === 'war') return;
         
         // Determine what to trade
         const resources = ['gold', 'wood', 'food', 'metal'];
-        const offering = resources[Math.floor(Math.random() * resources.length)];
-        const wanting = resources[Math.floor(Math.random() * resources.length)];
+        const offering = resources[Math.floor(this.random() * resources.length)];
+        const wanting = resources[Math.floor(this.random() * resources.length)];
         
         if (offering === wanting) return;
         if (nation.resources[offering] < 20) return;
@@ -376,7 +429,7 @@ class Game {
             offering: offering,
             offeringAmount: Math.floor(nation.resources[offering] * 0.2),
             wanting: wanting,
-            wantingAmount: Math.floor(Math.random() * 30) + 10,
+            wantingAmount: Math.floor(this.random() * 30) + 10,
             turn: this.turn
         };
         
@@ -400,7 +453,7 @@ class Game {
             const hasResource = nation.resources[offer.offering] >= offer.offeringAmount;
             const goodRelations = nation.diplomacy[partner.id] === 'trade' || nation.diplomacy[partner.id] === 'peace';
             
-            if (needsResource && hasResource && (goodRelations || Math.random() < 0.3)) {
+            if (needsResource && hasResource && (goodRelations || this.random() < 0.3)) {
                 // Accept trade
                 nation.resources[offer.wanting] += offer.offeringAmount;
                 nation.resources[offer.offering] -= offer.wantingAmount;
@@ -429,9 +482,9 @@ class Game {
                 this.moveArmyTowards(army, enemies[0].x, enemies[0].y);
             } else if (neutralTargets.length > 0) {
                 // Expand into neutral territory
-                const target = neutralTargets[Math.floor(Math.random() * neutralTargets.length)];
+                const target = neutralTargets[Math.floor(this.random() * neutralTargets.length)];
                 this.moveArmyTowards(army, target.x, target.y);
-            } else if (Math.random() < 0.3) {
+            } else if (this.random() < 0.3) {
                 // Random patrol movement
                 this.moveArmyRandomly(army);
             }
@@ -492,7 +545,7 @@ class Game {
         if (army.movementPoints <= 0) return;
         
         const directions = [[-1,0], [1,0], [0,-1], [0,1]];
-        const dir = directions[Math.floor(Math.random() * directions.length)];
+        const dir = directions[Math.floor(this.random() * directions.length)];
         const newX = army.x + dir[0];
         const newY = army.y + dir[1];
         
@@ -578,7 +631,7 @@ class Game {
         
         if (spawnPoints.length === 0) return;
         
-        const spawnPoint = spawnPoints[Math.floor(Math.random() * spawnPoints.length)];
+        const spawnPoint = spawnPoints[Math.floor(this.random() * spawnPoints.length)];
         const maxLevel = spawnPoint.type === 'town' ? 3 : 10;
         const cost = 15;
         
@@ -597,7 +650,7 @@ class Game {
             const availableCells = this.getNearbyEmptyCells(mainCell, spawnPoint.innerX, spawnPoint.innerY);
             
             if (availableCells.length > 0) {
-                const placement = availableCells[Math.floor(Math.random() * availableCells.length)];
+                const placement = availableCells[Math.floor(this.random() * availableCells.length)];
                 mainCell.innerGrid[placement.x][placement.y].army = army;
                 army.innerX = placement.x;
                 army.innerY = placement.y;
@@ -633,11 +686,11 @@ class Game {
         
         if (undeveloped.length === 0) return;
         
-        const target = undeveloped[Math.floor(Math.random() * undeveloped.length)];
+        const target = undeveloped[Math.floor(this.random() * undeveloped.length)];
         const cell = this.map[target.x][target.y];
         
         const developments = ['farm', 'mine', 'forest'];
-        cell.development = developments[Math.floor(Math.random() * developments.length)];
+        cell.development = developments[Math.floor(this.random() * developments.length)];
         nation.resources.gold -= 20;
         
         this.log(`${nation.name} developed ${cell.development} at (${target.x}, ${target.y})`);
@@ -648,7 +701,7 @@ class Game {
         
         if (borders.length === 0) return;
         
-        const target = borders[Math.floor(Math.random() * borders.length)];
+        const target = borders[Math.floor(this.random() * borders.length)];
         const cell = this.map[target.x][target.y];
         
         if (!cell.owner && cell.terrain !== 'ocean' && cell.terrain !== 'mountain') {
@@ -685,11 +738,11 @@ class Game {
         if (nation.resources.gold < 10) return;
         
         // Pick a random territory to develop
-        const territory = nation.territory[Math.floor(Math.random() * nation.territory.length)];
+        const territory = nation.territory[Math.floor(this.random() * nation.territory.length)];
         const mainCell = this.map[territory.x][territory.y];
         
         // Build roads first if there are towns/cities without connections
-        if (Math.random() < 0.4) {
+        if (this.random() < 0.4) {
             this.buildRoads(nation, territory.x, territory.y);
         }
         
@@ -707,7 +760,7 @@ class Game {
         if (undeveloped.length === 0) return;
         
         // Develop a random cell
-        const target = undeveloped[Math.floor(Math.random() * undeveloped.length)];
+        const target = undeveloped[Math.floor(this.random() * undeveloped.length)];
         const innerCell = mainCell.innerGrid[target.x][target.y];
         
         // AI decision on what to build
@@ -715,13 +768,13 @@ class Game {
         if (nation.resources.food < 50) developments.push('farm');
         if (nation.resources.wood < 30) developments.push('forest');
         if (nation.resources.metal < 20) developments.push('mine');
-        if (Math.random() < 0.3) developments.push('town');
+        if (this.random() < 0.3) developments.push('town');
         
         if (developments.length === 0) {
             developments.push('farm', 'forest', 'town');
         }
         
-        const development = developments[Math.floor(Math.random() * developments.length)];
+        const development = developments[Math.floor(this.random() * developments.length)];
         
         // Validate development choice
         if (development === 'mine' && innerCell.terrain !== 'mountain') {
@@ -732,7 +785,7 @@ class Game {
         }
         
         if (innerCell.development === 'town') {
-            innerCell.population = 100 + Math.floor(Math.random() * 200);
+            innerCell.population = 100 + Math.floor(this.random() * 200);
             innerCell.level = 1;
         }
         
@@ -802,9 +855,9 @@ class Game {
         }
         
         // Calculate battle outcome
-        const attackPower = attackingArmy.level + Math.floor(Math.random() * 6) + 1;
+        const attackPower = attackingArmy.level + Math.floor(this.random() * 6) + 1;
         const defensePower = defendingArmies.reduce((total, army) => total + army.level, 0) + 
-                           Math.floor(Math.random() * 6) + 1 + 
+                           Math.floor(this.random() * 6) + 1 + 
                            (targetCell.development === 'castle' ? 3 : 0);
         
         const battle = {
@@ -842,7 +895,7 @@ class Game {
             battle.winner = defendingNation.name;
             
             // Attacking army takes damage or is destroyed
-            if (Math.random() < 0.5) {
+            if (this.random() < 0.5) {
                 this.removeArmy(attackingArmy);
                 this.log(`${defendingNation.name} destroyed ${attackingNation.name} army at (${targetX}, ${targetY}) (${defensePower} vs ${attackPower})`);
             } else {
@@ -882,8 +935,8 @@ class Game {
         const attacker = this.nations[army.nationId];
         const defender = this.nations[defenderId];
         
-        const attackRoll = Math.floor(Math.random() * 6) + army.level;
-        const defenseRoll = Math.floor(Math.random() * 6) + 3;
+        const attackRoll = Math.floor(this.random() * 6) + army.level;
+        const defenseRoll = Math.floor(this.random() * 6) + 3;
         
         if (attackRoll > defenseRoll) {
             this.map[army.x][army.y].owner = army.nationId;
@@ -1452,6 +1505,11 @@ class Game {
         this.nations = [];
         this.map = this.initializeMap();
         this.gameLog = [];
+        
+        // Generate new seed for reset
+        this.seed = Math.floor(Math.random() * 1000000);
+        this.random = this.createSeededRandom(this.seed);
+        
         this.initializeGame();
         this.render();
     }
@@ -1499,4 +1557,6 @@ class Army {
 let game;
 window.addEventListener('load', () => {
     game = new Game();
+    // Display seed after DOM is ready
+    setTimeout(() => game.displaySeed(), 100);
 });

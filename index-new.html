@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASCII Strategy Simulation</title>
+    
+    <!-- CSS imports -->
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/crt-effects.css">
+    <link rel="stylesheet" href="styles/components.css">
+    
+    <!-- Preload key modules -->
+    <link rel="modulepreload" href="src/main.js">
+    <link rel="modulepreload" href="src/modules/Game.js">
+    <link rel="modulepreload" href="src/utils/Constants.js">
+    
+    <!-- Loading screen styles -->
+    <style>
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        }
+        
+        .loading-content {
+            text-align: center;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .loading-content h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px #00ff00;
+        }
+        
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 2px solid transparent;
+            border-top: 2px solid #00ff00;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        }
+        
+        .error-content {
+            text-align: center;
+            color: #ff0000;
+            font-family: 'Courier New', monospace;
+            max-width: 600px;
+            padding: 20px;
+        }
+        
+        .error-content h2 {
+            font-size: 32px;
+            margin-bottom: 20px;
+        }
+        
+        .error-content p {
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+        
+        .error-content button {
+            background: #003300;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            padding: 10px 20px;
+            margin-top: 20px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 14px;
+        }
+        
+        .error-content button:hover {
+            background: #004400;
+            box-shadow: 0 0 5px #00ff00;
+        }
+    </style>
+</head>
+<body class="crt-effect">
+    <!-- Game container will be created dynamically by JavaScript -->
+    
+    <!-- Fallback content for browsers that don't support ES6 modules -->
+    <noscript>
+        <div class="error-screen">
+            <div class="error-content">
+                <h2>⚠️ JavaScript Required</h2>
+                <p>This game requires JavaScript to run.</p>
+                <p>Please enable JavaScript in your browser and reload the page.</p>
+            </div>
+        </div>
+    </noscript>
+    
+    <!-- Module loading error fallback -->
+    <script>
+        // Check for module support
+        if (!('noModule' in HTMLScriptElement.prototype)) {
+            document.body.innerHTML = `
+                <div class="error-screen">
+                    <div class="error-content">
+                        <h2>⚠️ Browser Not Supported</h2>
+                        <p>This game requires a modern browser with ES6 module support.</p>
+                        <p>Please update your browser or use a modern browser like Chrome, Firefox, Safari, or Edge.</p>
+                    </div>
+                </div>
+            `;
+        }
+    </script>
+    
+    <!-- Main application entry point -->
+    <script type="module" src="src/main.js"></script>
+    
+    <!-- Service Worker for offline support (optional) -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(registration => {
+                        console.log('SW registered: ', registration);
+                    })
+                    .catch(registrationError => {
+                        console.log('SW registration failed: ', registrationError);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>

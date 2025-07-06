@@ -1,0 +1,344 @@
+/**
+ * Main styles and layout for ASCII Strategy Simulation
+ */
+
+:root {
+    /* Color scheme */
+    --primary-color: #00ff00;
+    --background-color: #000;
+    --secondary-bg: #001100;
+    --tertiary-bg: #002200;
+    --text-color: #00ff00;
+    --accent-color: #ffff00;
+    --highlight-color: #ffffff;
+    --error-color: #ff0000;
+    --info-color: #00ffff;
+    
+    /* Terrain colors */
+    --ocean-color: #000044;
+    --mountain-color: #444400;
+    --river-color: #004444;
+    --land-color: #002200;
+    
+    /* Nation colors */
+    --nation-red: #440000;
+    --nation-blue: #000044;
+    --nation-green: #004400;
+    --nation-yellow: #444400;
+    
+    /* Spacing */
+    --spacing-xs: 2px;
+    --spacing-sm: 5px;
+    --spacing-md: 10px;
+    --spacing-lg: 20px;
+    
+    /* Typography */
+    --font-family: 'Courier New', monospace;
+    --font-size-xs: 9px;
+    --font-size-sm: 10px;
+    --font-size-md: 12px;
+    --font-size-lg: 16px;
+    --font-size-xl: 20px;
+    
+    /* Grid dimensions */
+    --map-cell-size: 40px;
+    --inner-cell-size: 16px;
+    --grid-gap: 0px;
+    --border-width: 1px;
+}
+
+/* Reset and base styles */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    background-color: var(--background-color);
+    color: var(--text-color);
+    font-family: var(--font-family);
+    margin: 0;
+    padding: var(--spacing-lg);
+    overflow-x: auto;
+    line-height: 1.4;
+}
+
+/* Main layout */
+#gameContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Typography */
+h1 {
+    color: var(--primary-color);
+    text-align: center;
+    font-size: var(--font-size-xl);
+    margin: 0 0 var(--spacing-md) 0;
+    text-shadow: 0 0 10px var(--primary-color);
+}
+
+h2 {
+    color: var(--primary-color);
+    font-size: var(--font-size-lg);
+    margin: var(--spacing-md) 0 var(--spacing-sm) 0;
+}
+
+h3 {
+    color: var(--primary-color);
+    font-size: var(--font-size-md);
+    margin: var(--spacing-sm) 0;
+}
+
+h4 {
+    color: var(--primary-color);
+    font-size: var(--font-size-sm);
+    margin: 0 0 var(--spacing-md) 0;
+    text-align: center;
+}
+
+/* Buttons */
+button {
+    background-color: var(--tertiary-bg);
+    color: var(--primary-color);
+    border: var(--border-width) solid var(--primary-color);
+    padding: var(--spacing-sm) var(--spacing-md);
+    margin: var(--spacing-xs);
+    cursor: pointer;
+    font-family: var(--font-family);
+    font-size: var(--font-size-sm);
+    transition: background-color 0.2s ease;
+}
+
+button:hover {
+    background-color: var(--secondary-bg);
+    box-shadow: 0 0 5px var(--primary-color);
+}
+
+button:active {
+    background-color: var(--primary-color);
+    color: var(--background-color);
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Seed display */
+#seedDisplay {
+    font-size: var(--font-size-xs);
+    color: #666;
+    text-align: center;
+    margin-bottom: var(--spacing-md);
+}
+
+#currentSeed {
+    color: var(--accent-color);
+    font-weight: bold;
+}
+
+/* Controls */
+#controls {
+    margin: var(--spacing-md);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--spacing-xs);
+}
+
+/* Zoom info */
+#zoomInfo {
+    background-color: var(--secondary-bg);
+    border: var(--border-width) solid var(--primary-color);
+    padding: var(--spacing-sm);
+    margin: var(--spacing-sm);
+    text-align: center;
+    border-radius: 3px;
+}
+
+#zoomCoords {
+    color: var(--accent-color);
+    font-weight: bold;
+}
+
+/* Map container */
+#mapDisplay {
+    background-color: var(--secondary-bg);
+    border: 2px solid var(--primary-color);
+    padding: var(--spacing-md);
+    margin: var(--spacing-md);
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    grid-template-rows: repeat(10, 1fr);
+    gap: var(--grid-gap);
+    width: 400px;
+    height: 400px;
+    position: relative;
+}
+
+/* Map cells */
+.map-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--tertiary-bg);
+    border: var(--border-width) solid #004400;
+    font-size: var(--font-size-lg);
+    font-family: var(--font-family);
+    color: var(--text-color);
+    cursor: pointer;
+    transition: border-color 0.2s ease;
+    position: relative;
+}
+
+.map-cell:hover {
+    border: 2px solid var(--primary-color);
+}
+
+/* Inner grid cells */
+.inner-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--tertiary-bg);
+    border: var(--border-width) solid #004400;
+    font-size: var(--font-size-sm);
+    font-family: var(--font-family);
+    color: var(--text-color);
+    transition: border-color 0.2s ease;
+}
+
+.inner-cell:hover {
+    border-color: var(--primary-color);
+}
+
+/* Highlighted cells */
+.map-cell.highlighted,
+.inner-cell.highlighted {
+    border: 3px solid var(--accent-color) !important;
+    box-shadow: 0 0 10px var(--accent-color);
+    animation: highlight-pulse 2s ease-in-out;
+}
+
+@keyframes highlight-pulse {
+    0%, 100% {
+        box-shadow: 0 0 10px var(--accent-color);
+    }
+    50% {
+        box-shadow: 0 0 20px var(--accent-color);
+    }
+}
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    color: var(--text-color);
+    font-family: var(--font-family);
+    font-size: var(--font-size-xs);
+}
+
+th, td {
+    border: var(--border-width) solid var(--primary-color);
+    padding: 4px 8px;
+    text-align: center;
+}
+
+th {
+    background-color: var(--tertiary-bg);
+    font-weight: bold;
+}
+
+tr:nth-child(even) {
+    background-color: var(--secondary-bg);
+}
+
+/* Coordinate links */
+.coordinate-link {
+    color: var(--accent-color);
+    text-decoration: underline;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.coordinate-link:hover {
+    color: var(--highlight-color);
+    background-color: rgba(255, 255, 0, 0.2);
+    text-shadow: 0 0 5px var(--accent-color);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    body {
+        padding: var(--spacing-sm);
+    }
+    
+    #mapDisplay {
+        width: 320px;
+        height: 320px;
+        padding: var(--spacing-sm);
+    }
+    
+    .map-cell {
+        font-size: var(--font-size-md);
+    }
+    
+    .inner-cell {
+        font-size: var(--font-size-xs);
+    }
+    
+    #controls {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    button {
+        width: 100%;
+        max-width: 200px;
+        margin: var(--spacing-xs) 0;
+    }
+}
+
+@media (max-width: 480px) {
+    h1 {
+        font-size: var(--font-size-lg);
+    }
+    
+    #mapDisplay {
+        width: 280px;
+        height: 280px;
+    }
+    
+    .map-cell {
+        font-size: var(--font-size-sm);
+    }
+}
+
+/* Utility classes */
+.hidden {
+    display: none !important;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.text-highlight {
+    color: var(--accent-color);
+    font-weight: bold;
+}
+
+.error {
+    color: var(--error-color);
+}
+
+.success {
+    color: var(--primary-color);
+}
+
+.info {
+    color: var(--info-color);
+}
