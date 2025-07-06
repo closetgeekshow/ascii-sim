@@ -35,6 +35,7 @@ class GameApplication {
             
             // Initialize UI components
             this.uiComponents = new UIComponents();
+            this.uiComponents.setGame(this.game); // Set game reference for button handlers
             this.renderer = new Renderer(this.game);
             this.eventHandlers = new EventHandlers(this.game, this.renderer, this.uiComponents);
             
@@ -46,6 +47,14 @@ class GameApplication {
             
             // Initial render
             this.render();
+            
+            // Force initial UI update
+            this.uiComponents.updateGameStats(this.game);
+            this.uiComponents.updateGameLog(this.game.gameLog);
+            
+            // Force initial map render
+            console.log('Forcing initial map render...');
+            this.renderer.render();
             
             // Hide loading state
             this.hideLoading();
@@ -125,17 +134,15 @@ class GameApplication {
         if (!this.isInitialized) return;
         
         try {
-            // Update UI components
-            this.uiComponents.updateGameStats(this.game);
-            this.uiComponents.updateBattleLog(this.game.battleManager);
-            this.uiComponents.updateGameLog(this.game.gameLog);
-            this.uiComponents.updateNationStats(this.game.nations);
+            // Update UI components less frequently to avoid overwhelming
+            if (!this.lastUIUpdate || Date.now() - this.lastUIUpdate > 100) {
+                this.uiComponents.updateGameStats(this.game);
+                this.uiComponents.updateGameLog(this.game.gameLog);
+                this.lastUIUpdate = Date.now();
+            }
             
             // Render map
             this.renderer.render();
-            
-            // Update seed display
-            this.uiComponents.updateSeedDisplay(this.game.seed);
             
             // Schedule next render
             requestAnimationFrame(() => this.render());

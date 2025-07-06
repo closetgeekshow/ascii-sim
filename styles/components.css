@@ -256,6 +256,29 @@
     height: 30px;
 }
 
+/* Ensure button containers are consistent width */
+.button-container,
+.controls-container {
+    width: 400px;
+    max-width: 90vw;
+    margin: var(--spacing-md) auto;
+    box-sizing: border-box;
+}
+
+/* Make sure modal buttons also follow the same pattern */
+.modal-footer {
+    display: flex;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-md);
+    padding-top: var(--spacing-md);
+    border-top: var(--border-width) solid var(--primary-color);
+}
+
+.modal-footer button {
+    min-width: 80px;
+}
+
 /* Progress bars */
 .progress-bar {
     width: 100%;

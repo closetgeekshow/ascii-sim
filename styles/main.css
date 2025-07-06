@@ -59,7 +59,9 @@ body {
     margin: 0;
     padding: var(--spacing-lg);
     overflow-x: auto;
+    overflow-y: auto;
     line-height: 1.4;
+    min-height: 100vh;
 }
 
 /* Main layout */
@@ -77,7 +79,6 @@ h1 {
     text-align: center;
     font-size: var(--font-size-xl);
     margin: 0 0 var(--spacing-md) 0;
-    text-shadow: 0 0 10px var(--primary-color);
 }
 
 h2 {
@@ -104,12 +105,14 @@ button {
     background-color: var(--tertiary-bg);
     color: var(--primary-color);
     border: var(--border-width) solid var(--primary-color);
-    padding: var(--spacing-sm) var(--spacing-md);
-    margin: var(--spacing-xs);
+    padding: var(--spacing-md) var(--spacing-sm);
+    margin: 0; /* Remove margin since we're using grid gap */
     cursor: pointer;
     font-family: var(--font-family);
     font-size: var(--font-size-sm);
     transition: background-color 0.2s ease;
+    min-height: 44px; /* Touch-friendly height */
+    white-space: nowrap;
 }
 
 button:hover {
@@ -140,13 +143,27 @@ button:disabled {
     font-weight: bold;
 }
 
-/* Controls */
+/* Controls - make wider to match map area */
 #controls {
-    margin: var(--spacing-md);
+    margin: var(--spacing-md) auto;
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    gap: var(--spacing-xs);
+    gap: var(--spacing-sm);
+    width: 400px; /* Match map width */
+    max-width: 90vw; /* Responsive fallback */
+}
+
+/* Footer/button container - make wider to match map area */
+.button-container {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr); /* 4 equal columns for buttons */
+    gap: var(--spacing-sm);
+    margin: var(--spacing-md) auto;
+    padding: var(--spacing-md);
+    border-top: var(--border-width) solid var(--primary-color);
+    width: 400px; /* Match map width */
+    max-width: 90vw; /* Responsive fallback */
 }
 
 /* Zoom info */
@@ -219,17 +236,7 @@ button:disabled {
 .map-cell.highlighted,
 .inner-cell.highlighted {
     border: 3px solid var(--accent-color) !important;
-    box-shadow: 0 0 10px var(--accent-color);
-    animation: highlight-pulse 2s ease-in-out;
-}
-
-@keyframes highlight-pulse {
-    0%, 100% {
-        box-shadow: 0 0 10px var(--accent-color);
-    }
-    50% {
-        box-shadow: 0 0 20px var(--accent-color);
-    }
+    background-color: rgba(255, 255, 0, 0.2);
 }
 
 /* Tables */
@@ -267,53 +274,95 @@ tr:nth-child(even) {
 .coordinate-link:hover {
     color: var(--highlight-color);
     background-color: rgba(255, 255, 0, 0.2);
-    text-shadow: 0 0 5px var(--accent-color);
 }
 
-/* Responsive design */
-@media (max-width: 768px) {
-    body {
-        padding: var(--spacing-sm);
+/* Responsive game area - mobile first approach */
+.game-area-responsive {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+    gap: 15px;
+    flex: 1;
+}
+
+/* Stack vertically on mobile: map first, then stats, then log */
+.game-area-responsive > *:nth-child(2) {
+    order: 1; /* Map container first */
+}
+
+.game-area-responsive > *:nth-child(1) {
+    order: 2; /* Stats second */
+}
+
+.game-area-responsive > *:nth-child(3) {
+    order: 3; /* Log third */
+}
+
+/* Desktop layout - 3 columns */
+@media (min-width: 768px) {
+    .game-area-responsive {
+        grid-template-columns: 250px 1fr 250px;
+        grid-template-rows: none;
     }
     
-    #mapDisplay {
-        width: 320px;
-        height: 320px;
-        padding: var(--spacing-sm);
+    /* Reset order for desktop */
+    .game-area-responsive > *:nth-child(1) {
+        order: 1; /* Stats left */
     }
     
-    .map-cell {
-        font-size: var(--font-size-md);
+    .game-area-responsive > *:nth-child(2) {
+        order: 2; /* Map center */
     }
     
-    .inner-cell {
-        font-size: var(--font-size-xs);
-    }
-    
-    #controls {
-        flex-direction: column;
-        align-items: center;
-    }
-    
-    button {
-        width: 100%;
-        max-width: 200px;
-        margin: var(--spacing-xs) 0;
+    .game-area-responsive > *:nth-child(3) {
+        order: 3; /* Log right */
     }
 }
 
+/* Mobile portrait optimizations */
 @media (max-width: 480px) {
+    body {
+        padding: 5px;
+    }
+    
+    #gameContainer {
+        padding: 5px;
+    }
+    
     h1 {
-        font-size: var(--font-size-lg);
+        font-size: 18px !important;
     }
     
-    #mapDisplay {
-        width: 280px;
-        height: 280px;
+    /* Make buttons more touch-friendly */
+    button {
+        min-height: 48px;
+        font-size: 14px;
+        padding: 12px 16px;
     }
     
-    .map-cell {
-        font-size: var(--font-size-sm);
+    /* Adjust game log height on mobile */
+    #gameLog {
+        height: 150px !important;
+    }
+}
+
+/* Landscape mobile - use desktop layout but smaller */
+@media (max-width: 767px) and (orientation: landscape) {
+    .game-area-responsive {
+        grid-template-columns: 180px 1fr 180px;
+        grid-template-rows: none;
+    }
+    
+    .game-area-responsive > *:nth-child(1) {
+        order: 1; /* Stats left */
+    }
+    
+    .game-area-responsive > *:nth-child(2) {
+        order: 2; /* Map center */
+    }
+    
+    .game-area-responsive > *:nth-child(3) {
+        order: 3; /* Log right */
     }
 }
 

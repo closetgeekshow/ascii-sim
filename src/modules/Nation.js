@@ -198,12 +198,14 @@ export class Nation {
         this.totalPopulation = 0;
         for (const territory of this.territory) {
             const cell = map[territory.x][territory.y];
-            this.totalPopulation += cell.population;
+            this.totalPopulation += cell.population || 0;
             
             // Add inner grid population
-            for (let i = 0; i < cell.innerGrid.length; i++) {
-                for (let j = 0; j < cell.innerGrid[i].length; j++) {
-                    this.totalPopulation += cell.innerGrid[i][j].population;
+            if (cell.innerGrid) {
+                for (let i = 0; i < cell.innerGrid.length; i++) {
+                    for (let j = 0; j < cell.innerGrid[i].length; j++) {
+                        this.totalPopulation += cell.innerGrid[i][j].population || 0;
+                    }
                 }
             }
         }
@@ -213,7 +215,7 @@ export class Nation {
      * Check if nation is eliminated
      */
     isEliminated() {
-        return this.totalTerritory === 0 || this.totalPopulation === 0;
+        return this.totalTerritory === 0;
     }
 
     /**

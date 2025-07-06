@@ -171,7 +171,7 @@ export class BattleManager {
     /**
      * Resolve defender victory
      */
-    resolveDefenderVictory(battle, attackingArmy, defendingArmies) {
+    resolveDefenderVictory(battle, attackingArmy, defendingArmies, nations) {
         battle.winner = battle.defender;
         
         // Attacking army takes damage or is destroyed

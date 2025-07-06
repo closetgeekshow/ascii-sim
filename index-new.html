@@ -7,7 +7,6 @@
     
     <!-- CSS imports -->
     <link rel="stylesheet" href="styles/main.css">
-    <link rel="stylesheet" href="styles/crt-effects.css">
     <link rel="stylesheet" href="styles/components.css">
     
     <!-- Preload key modules -->
@@ -105,7 +104,7 @@
         }
     </style>
 </head>
-<body class="crt-effect">
+<body>
     <!-- Game container will be created dynamically by JavaScript -->
     
     <!-- Fallback content for browsers that don't support ES6 modules -->
@@ -138,19 +137,10 @@
     <!-- Main application entry point -->
     <script type="module" src="src/main.js"></script>
     
-    <!-- Service Worker for offline support (optional) -->
+    <!-- Service Worker disabled for now - can be added later for offline support -->
     <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')
-                    .then(registration => {
-                        console.log('SW registered: ', registration);
-                    })
-                    .catch(registrationError => {
-                        console.log('SW registration failed: ', registrationError);
-                    });
-            });
-        }
+        // Service Worker can be enabled later by creating sw.js
+        // if ('serviceWorker' in navigator) { ... }
     </script>
 </body>
 </html>

@@ -161,11 +161,13 @@ export class Game {
         
         try {
             this.turn++;
+            console.log(`Processing turn ${this.turn}...`);
             this.log(`--- Turn ${this.turn} ---`);
             
             // Process each nation
             for (const nation of this.nations) {
                 if (!nation.isEliminated()) {
+                    console.log(`Processing ${nation.name}...`);
                     this.processNationTurn(nation);
                 }
             }
@@ -179,6 +181,8 @@ export class Game {
             // Update performance stats
             this.performanceStats.turnTime = Date.now() - startTime;
             this.performanceStats.lastUpdate = Date.now();
+            
+            console.log(`Turn ${this.turn} completed. Log entries: ${this.gameLog.length}`);
             
         } catch (error) {
             console.error('Error processing turn:', error);
@@ -447,11 +451,13 @@ export class Game {
      */
     log(message) {
         const timestamp = new Date().toLocaleTimeString();
-        this.gameLog.push({
+        const logEntry = {
             turn: this.turn,
             message: message,
             timestamp: timestamp
-        });
+        };
+        this.gameLog.push(logEntry);
+        console.log(`[T${this.turn}] ${message}`);
         
         // Keep only last 1000 log entries
         if (this.gameLog.length > 1000) {
